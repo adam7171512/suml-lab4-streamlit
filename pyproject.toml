@@ -1,24 +1,20 @@
 [project]
 name = "lab4"
 version = "0.1.0"
-description = "SUML lab 4 environment managed with uv"
+description = "Streamlit text analysis app for SUML lab 4"
 requires-python = ">=3.10,<3.13"
 dependencies = [
-    "fastapi",
-    "matplotlib",
-    "mlflow",
-    "nbformat",
-    "numpy",
-    "onnxruntime",
-    "pandas",
-    "plotly",
-    "scikit-learn",
-    "seaborn",
-    "skl2onnx",
     "streamlit",
     "torch",
-    "torchaudio",
-    "torchvision",
     "transformers",
-    "uvicorn",
 ]
+
+[project.scripts]
+lab4 = "streamlit_app:run"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["streamlit_app"]
