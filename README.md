@@ -2,10 +2,11 @@
 
 Prosta aplikacja Streamlit do analizy tekstu w języku angielskim.
 
-W aplikacji można wybrać jedną z dwóch funkcji:
+W aplikacji można wybrać jedną z trzech funkcji:
 
 1. sprawdzenie wydźwięku tekstu,
-2. wykrywanie emocji w tekście.
+2. wykrywanie emocji w tekście,
+3. tłumaczenie tekstu z języka angielskiego na język niemiecki.
 
 Do predykcji użyte są gotowe modele z Hugging Face uruchamiane przez bibliotekę
 `transformers`.

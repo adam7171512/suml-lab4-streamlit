@@ -9,12 +9,15 @@ class TextTask:
     title: str
     description: str
     model_id: str
+    task_type: str
     result_label: str
-    label_map: dict[str, str]
+    pipeline_task: str | None = None
+    label_map: dict[str, str] | None = None
 
 
 SENTIMENT_MODEL = "distilbert-base-uncased-finetuned-sst-2-english"
 EMOTION_MODEL = "Panda0116/emotion-classification-model"
+TRANSLATION_MODEL = "Helsinki-NLP/opus-mt-en-de"
 
 SENTIMENT_LABELS = {
     "POSITIVE": "Pozytywny",
@@ -41,24 +44,45 @@ TASKS = (
         title="Wydźwięk emocjonalny tekstu",
         description="Klasyfikacja krótkiego tekstu po angielsku jako pozytywnego albo negatywnego.",
         model_id=SENTIMENT_MODEL,
+        task_type="classification",
         result_label="Wydźwięk",
+        pipeline_task="text-classification",
         label_map=SENTIMENT_LABELS,
     ),
     TextTask(
         title="Wykrywanie emocji w tekście",
         description="Rozpoznawanie jednej z emocji: smutek, radość, miłość, złość, strach albo zaskoczenie.",
         model_id=EMOTION_MODEL,
+        task_type="classification",
         result_label="Emocja",
+        pipeline_task="text-classification",
         label_map=EMOTION_LABELS,
+    ),
+    TextTask(
+        title="Tłumaczenie z angielskiego na niemiecki",
+        description="Tłumaczenie tekstu z języka angielskiego na język niemiecki.",
+        model_id=TRANSLATION_MODEL,
+        task_type="translation",
+        result_label="Tłumaczenie",
     ),
 )
 
 
 @st.cache_resource
-def load_text_classifier(model_id: str):
+def load_text_pipeline(pipeline_task: str, model_id: str):
     from transformers import pipeline
 
-    return pipeline("text-classification", model=model_id)
+    return pipeline(pipeline_task, model=model_id)
+
+
+@st.cache_resource
+def load_translation_model(model_id: str):
+    from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(model_id)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_id)
+    model.eval()
+    return tokenizer, model
 
 
 def show_text_prediction(task: TextTask) -> None:
@@ -73,18 +97,37 @@ def show_text_prediction(task: TextTask) -> None:
     )
 
     if not text.strip():
-        st.info("Wpisz tekst po angielsku, aby zobaczyć wynik klasyfikacji.")
+        st.info("Wpisz tekst po angielsku, aby zobaczyć wynik.")
         return
 
     try:
-        with st.spinner("Analizowanie tekstu..."):
-            classifier = load_text_classifier(task.model_id)
-            prediction = classifier(text, truncation=True)[0]
+        with st.spinner("Przetwarzanie tekstu..."):
+            if task.task_type == "translation":
+                import torch
+
+                tokenizer, model = load_translation_model(task.model_id)
+                inputs = tokenizer(text, return_tensors="pt", truncation=True)
+                inputs = {name: value.to(model.device) for name, value in inputs.items()}
+                with torch.no_grad():
+                    output_tokens = model.generate(**inputs, max_length=512)
+                translation = tokenizer.decode(output_tokens[0], skip_special_tokens=True)
+            else:
+                if task.pipeline_task is None:
+                    raise ValueError("Brak typu pipeline dla zadania klasyfikacji.")
+                text_pipeline = load_text_pipeline(task.pipeline_task, task.model_id)
+                prediction = text_pipeline(text, truncation=True)[0]
     except Exception as exc:
-        st.error(f"Nie udało się wykonać predykcji: {exc}")
+        st.error(f"Nie udało się przetworzyć tekstu: {exc}")
         return
 
-    label = task.label_map.get(prediction["label"], prediction["label"].title())
+    if task.task_type == "translation":
+        st.divider()
+        st.markdown(f"**{task.result_label}:**")
+        st.success(translation)
+        return
+
+    label_map = task.label_map or {}
+    label = label_map.get(prediction["label"], prediction["label"].title())
     confidence = prediction["score"]
 
     st.divider()
@@ -102,8 +145,8 @@ def main() -> None:
 
     st.title("Analiza tekstu z użyciem Hugging Face")
     st.write(
-        "Aplikacja Streamlit pozwala wybrać jedną z dwóch funkcji NLP i uruchomić "
-        "gotowy model klasyfikacji tekstu."
+        "Aplikacja Streamlit pozwala wybrać jedną z trzech funkcji NLP i uruchomić "
+        "gotowy model z Hugging Face."
     )
 
     selected_task_title = st.selectbox(

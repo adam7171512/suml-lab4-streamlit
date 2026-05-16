@@ -1,5 +1,6 @@
 .venv/
 .uv-cache/
+.idea/
 __pycache__/
 *.py[cod]
 *.egg-info/
