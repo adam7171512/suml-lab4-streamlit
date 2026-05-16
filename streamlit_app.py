@@ -77,10 +77,10 @@ def load_text_pipeline(pipeline_task: str, model_id: str):
 
 @st.cache_resource
 def load_translation_model(model_id: str):
-    from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+    from transformers import MarianMTModel, MarianTokenizer
 
-    tokenizer = AutoTokenizer.from_pretrained(model_id)
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_id)
+    tokenizer = MarianTokenizer.from_pretrained(model_id)
+    model = MarianMTModel.from_pretrained(model_id)
     model.eval()
     return tokenizer, model
 
