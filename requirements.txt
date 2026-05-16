@@ -1,5 +1,5 @@
 streamlit
 transformers
 torch
-sentencepiece
-sacremoses
+sentencepiece==0.2.1
+sacremoses==0.1.1

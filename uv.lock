@@ -428,8 +428,8 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "sacremoses" },
-    { name = "sentencepiece" },
+    { name = "sacremoses", specifier = "==0.1.1" },
+    { name = "sentencepiece", specifier = "==0.2.1" },
     { name = "streamlit" },
     { name = "torch" },
     { name = "transformers" },
